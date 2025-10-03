@@ -1,0 +1,25 @@
+# This is a dump of rules, still playing with nflog groups and other things. 
+
+-A INPUT -s 127.0.0.1 -j ACCEPT
+-A INPUT -s 71.13.129.210 -j ACCEPT
+
+-A INPUT -m state --state INVALID -j SET --add-set invalid_scanners src --exist
+-A INPUT -m set --match-set invalid_scanners src -j NFLOG --nflog-prefix "INVALID_SCANNER BLOCKED" --nflog-group 0
+-A INPUT -m set --match-set invalid_scanners src -j NFLOG --nflog-prefix "INVALID_SCANNER BLOCKED" --nflog-group 1
+-A INPUT -m set --match-set invalid_scanners src -j REJECT
+
+
+#-A INPUT -m hashlimit --hashlimit-above 1/hour --hashlimit-burst 5 --hashlimit-name NTABLE --hashlimit-htable-expire 3600000 -j NFLOG --nflog-prefix "BURSTING: " --nflog-group 0
+#-A INPUT -m hashlimit --hashlimit-above 1/hour --hashlimit-burst 5 --hashlimit-name NTABLE --hashlimit-htable-expire 3600000 -j NFLOG --nflog-prefix "BURSTING" --nflog-group 1
+-A INPUT -m state --state NEW -m set ! --match-set scanned_ports src,dst -m hashlimit --hashlimit-above 1/hour --hashlimit-burst 5 --hashlimit-mode srcip --hashlimit-name portscan --hashlimit-htable-expire 3600000 -j SET --add-set port_scanners src --exist
+
+-A INPUT -m state --state NEW -m set --match-set port_scanners src -j NFLOG --nflog-prefix "PORT_SCANNER BLOCKED" --nflog-group 0
+-A INPUT -m state --state NEW -m set --match-set port_scanners src -j NFLOG --nflog-prefix "PORT_SCANNER BLOCKED" --nflog-group 1
+-A INPUT -m state --state NEW -m set --match-set port_scanners src -j REJECT
+
+-A INPUT -m state --state NEW -j SET --add-set scanned_ports src,dst
+
+-A INPUT -m state --state NEW -j SET --add-set other_scanners src --exist
+-A INPUT -m state --state NEW -m set --match-set other_scanners src -j NFLOG --nflog-prefix "OTHER_SCANNERS BLOCKED" --nflog-group 0
+-A INPUT -m state --state NEW -m set --match-set other_scanners src -j NFLOG --nflog-prefix "OTHER_SCANNERS BLOCKED" --nflog-group 1
+-A INPUT -m state --state NEW -m set --match-set other_scanners src -j REJECT
